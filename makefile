@@ -27,7 +27,13 @@ PATHI = include/
 
 BUILD_PATHS = $(PATHB) $(PATHD) $(PATHO) $(PATHR)
 
+# Find src code for program and tests
+SRCS = $(shell find $(PATHS) -name "*.c" -not -name "main.c")
 SRCT = $(shell find $(PATHT) -name "*.c")
+
+# Create object names that must be made
+SRC_OBJECTS = $(patsubst $(PATHS)%.c,$(PATHO)%.o,$(SRCS))
+TEST_OBJECTS = $(patsubst $(PATHT)%.c,$(PATHO)%.o,$(SRCT))
 
 COMPILE=gcc -c
 LINK=gcc
@@ -52,19 +58,23 @@ test: $(BUILD_PATHS) $(RESULTS)
 $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 	-./$< > $@ 2>&1
 
-$(PATHB)Test%.$(TARGET_EXTENSION): $(PATHO)Test%.o $(PATHO)%.o $(PATHO)unity.o #$(PATHD)Test%.d
+$(PATHB)Test%.$(TARGET_EXTENSION): $(TEST_OBJECTS) $(SRC_OBJECTS) $(PATHO)unity.o #$(PATHD)Test%.d
 	$(LINK) -o $@ $^
 
 $(PATHO)%.o:: $(PATHT)%.c
+	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
 $(PATHO)%.o:: $(PATHS)%.c
+	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
 $(PATHO)%.o:: $(PATHU)%.c $(PATHU)%.h
+	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
 $(PATHD)%.d:: $(PATHT)%.c
+	@$(MKDIR) $(dir $@)
 	$(DEPEND) $@ $<
 
 $(PATHB):
