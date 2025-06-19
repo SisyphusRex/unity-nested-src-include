@@ -27,7 +27,7 @@ PATHI = include/
 
 BUILD_PATHS = $(PATHB) $(PATHD) $(PATHO) $(PATHR)
 
-SRCT = $(wildcard $(PATHT)*.c)
+SRCT = $(shell find $(PATHT) -name "*.c")
 
 COMPILE=gcc -c
 LINK=gcc
