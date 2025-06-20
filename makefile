@@ -58,7 +58,8 @@ test: $(BUILD_PATHS) $(RESULTS)
 $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 	-./$< > $@ 2>&1
 
-$(PATHB)Test%.$(TARGET_EXTENSION): $(TEST_OBJECTS) $(SRC_OBJECTS) $(PATHO)unity.o #$(PATHD)Test%.d
+# TODO: i added the % pattern thinking it might help but still wont compile,
+$(PATHB)Test%.$(TARGET_EXTENSION): $(TEST_OBJECTS)Test%.o $(SRC_OBJECTS)%.o $(PATHO)unity.o #$(PATHD)Test%.d
 	$(LINK) -o $@ $^
 
 $(PATHO)%.o:: $(PATHT)%.c
