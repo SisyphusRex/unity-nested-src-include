@@ -35,6 +35,9 @@ SRCT = $(shell find $(PATHT) -name "*.c")
 SRC_OBJECTS = $(patsubst $(PATHS)%.c,$(PATHO)%.o,$(SRCS))
 TEST_OBJECTS = $(patsubst $(PATHT)%.c,$(PATHO)%.o,$(SRCT))
 
+# Test Executables here i am creating a list of the executables that need to be made
+TEST_EXECUTABLES = $(patsubst $(PATHT)%.c,$(PATHB)%.$(TARGET_EXTENSION),$(SRCT))
+
 COMPILE=gcc -c
 LINK=gcc
 DEPEND=gcc -MM -MG -MF
@@ -58,17 +61,15 @@ test: $(BUILD_PATHS) $(RESULTS)
 $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 	-./$< > $@ 2>&1
 
-# TODO: tried using find to search for file name and output that as dependency
-$(PATHB)Test%.$(TARGET_EXTENSION): $(shell find $(TEST_OBJECTS) -name "*Test%.o") $(shell find $(SRC_OBJECTS) -name "*%.o") $(PATHO)unity.o #$(PATHD)Test%.d
+# here I am using static rules so that each element in the list gets this rule applied
+$(TEST_EXECUTABLES): $(PATHO)Test%.o $(PATHO)%.o $(PATHO)unity.o #$(PATHD)Test%.d
 	$(LINK) -o $@ $^
 
 $(PATHO)%.o:: $(PATHT)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
-$(PATHO)%.o:: $(PATHS)%.c
-	@$(MKDIR) $(dir $@)
-	$(COMPILE) $(CFLAGS) $< -o $@
+
 
 $(PATHO)%.o:: $(PATHU)%.c $(PATHU)%.h
 	@$(MKDIR) $(dir $@)
@@ -77,6 +78,15 @@ $(PATHO)%.o:: $(PATHU)%.c $(PATHU)%.h
 $(PATHD)%.d:: $(PATHT)%.c
 	@$(MKDIR) $(dir $@)
 	$(DEPEND) $@ $<
+
+# static rules once again
+$(SRC_OBJECTS): $(PATHO)%.o: $(PATHS)%.c
+	@$(MKDIR) $(dir $@)
+	$(COMPILE) $(CFLAGS) $< -o $@
+
+$(TEST_OBJECTS): $(@D)Test%.o: $(PATHT)%.c
+	@$(MKDIR) $(dir $@)
+	$(COMPILE) $(CFLAGS) $< -o $@
 
 $(PATHB):
 	$(MKDIR) $(PATHB)
