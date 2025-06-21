@@ -58,8 +58,8 @@ test: $(BUILD_PATHS) $(RESULTS)
 $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 	-./$< > $@ 2>&1
 
-# TODO: i added the % pattern thinking it might help but still wont compile,
-$(PATHB)Test%.$(TARGET_EXTENSION): $(TEST_OBJECTS)Test%.o $(SRC_OBJECTS)%.o $(PATHO)unity.o #$(PATHD)Test%.d
+# TODO: tried using find to search for file name and output that as dependency
+$(PATHB)Test%.$(TARGET_EXTENSION): $(shell find $(TEST_OBJECTS) -name "*Test%.o") $(shell find $(SRC_OBJECTS) -name "*%.o") $(PATHO)unity.o #$(PATHD)Test%.d
 	$(LINK) -o $@ $^
 
 $(PATHO)%.o:: $(PATHT)%.c
