@@ -21,7 +21,9 @@ PATHS = src/
 PATHT = test/
 PATHB = build/
 PATHD = build/depends/
-PATHO = build/objs/
+PATHOT = build/objs/test/
+PATHOS = build/objs/src/
+PATHOU = build/objs/unity/
 PATHR = build/results/
 PATHI = include/
 
@@ -32,8 +34,8 @@ SRCS = $(shell find $(PATHS) -name "*.c" -not -name "main.c")
 SRCT = $(shell find $(PATHT) -name "*.c")
 
 # Create object names that must be made
-SRC_OBJECTS = $(patsubst $(PATHS)%.c,$(PATHO)%.o,$(SRCS))
-TEST_OBJECTS = $(patsubst $(PATHT)%.c,$(PATHO)%.o,$(SRCT))
+SRC_OBJECTS = $(patsubst $(PATHS)%.c,$(PATHOS)%.o,$(SRCS))
+TEST_OBJECTS = $(patsubst $(PATHT)%.c,$(PATHOT)%.o,$(SRCT))
 
 # Test Executables here i am creating a list of the executables that need to be made
 TEST_EXECUTABLES = $(patsubst $(PATHT)%.c,$(PATHB)%.$(TARGET_EXTENSION),$(SRCT))
@@ -62,16 +64,16 @@ $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 	-./$< > $@ 2>&1
 
 # here I am using static rules so that each element in the list gets this rule applied
-$(TEST_EXECUTABLES): $(PATHO)Test%.o $(PATHO)%.o $(PATHO)unity.o #$(PATHD)Test%.d
+$(TEST_EXECUTABLES): $(PATHB)Test%.$(TARGET_EXTENSION): $(PATHOT)Test%.o $(PATHOS)%.o $(PATHOU)unity.o #$(PATHD)Test%.d
 	$(LINK) -o $@ $^
 
-$(PATHO)%.o:: $(PATHT)%.c
+$(PATHOT)%.o:: $(PATHT)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
 
 
-$(PATHO)%.o:: $(PATHU)%.c $(PATHU)%.h
+$(PATHOU)%.o:: $(PATHU)%.c $(PATHU)%.h
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
@@ -80,11 +82,11 @@ $(PATHD)%.d:: $(PATHT)%.c
 	$(DEPEND) $@ $<
 
 # static rules once again
-$(SRC_OBJECTS): $(PATHO)%.o: $(PATHS)%.c
+$(SRC_OBJECTS): $(PATHOS)%.o: $(PATHS)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
-$(TEST_OBJECTS): $(@D)Test%.o: $(PATHT)%.c
+$(TEST_OBJECTS): $(PATHOT)%.o: $(PATHT)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
@@ -104,6 +106,7 @@ clean:
 	$(CLEANUP) $(PATHO)*.o
 	$(CLEANUP) $(PATHB)*.$(TARGET_EXTENSION)
 	$(CLEANUP) $(PATHR)*.txt
+	rm -r $(PATHB)
 
 .PRECIOUS: $(PATHB)Test%.$(TARGET_EXTENSION)
 .PRECIOUS: $(PATHD)%.d
