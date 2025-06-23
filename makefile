@@ -39,13 +39,15 @@ TEST_OBJECTS = $(patsubst $(PATHT)%.c,$(PATHOT)%.o,$(SRCT))
 
 # Test Executables here i am creating a list of the executables that need to be made
 TEST_EXECUTABLES = $(patsubst $(PATHT)%.c,$(PATHB)%.$(TARGET_EXTENSION),$(SRCT))
+RESULTS = $(patsubst $(PATHB)%.$(TARGET_EXTENSION),$(PATHR)%.txt,$(TEST_EXECUTABLES))
+
 
 COMPILE=gcc -c
 LINK=gcc
 DEPEND=gcc -MM -MG -MF
 CFLAGS=-I. -I$(PATHU) -I$(PATHS) -I$(PATHI) -DTEST
 
-RESULTS = $(patsubst $(PATHT)Test%.c,$(PATHR)Test%.txt,$(SRCT) )
+
 
 PASSED = `grep -s PASS $(PATHR)*.txt`
 FAIL = `grep -s FAIL $(PATHR)*.txt`
@@ -61,16 +63,16 @@ test: $(BUILD_PATHS) $(RESULTS)
 	@echo "\nDONE"
 
 $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
+	@echo "pattern: $(PATHB)%.$(TARGET_EXTENSION)"
 	-./$< > $@ 2>&1
 
-# here I am using static rules so that each element in the list gets this rule applied
-$(TEST_EXECUTABLES): $(PATHB)Test%.$(TARGET_EXTENSION): $(PATHOT)Test%.o $(PATHOS)%.o $(PATHOU)unity.o #$(PATHD)Test%.d
-	$(LINK) -o $@ $^
-
-$(PATHOT)%.o:: $(PATHT)%.c
+# TODO: The % pattern includes "Test" because i cannot filter it out and still get full path
+# But I need % without "Test" to match inside $(PATHOS)
+# I need to do a secondary expansion on $(PATHOS)%.o and substitution of Test $(subst Test,,%)
+$(TEST_EXECUTABLES): $(PATHB)%.$(TARGET_EXTENSION): $(PATHOT)%.o $(PATHOS)%.o $(PATHOU)unity.o #$(PATHD)Test%.d
+	@echo "pattern: $(PATHB)%.$(TARGET_EXTENSION)"
 	@$(MKDIR) $(dir $@)
-	$(COMPILE) $(CFLAGS) $< -o $@
-
+	$(LINK) -o $@ $^
 
 
 $(PATHOU)%.o:: $(PATHU)%.c $(PATHU)%.h
