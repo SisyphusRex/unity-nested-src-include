@@ -32,10 +32,12 @@ BUILD_PATHS = $(PATHB) $(PATHD) $(PATHO) $(PATHR)
 # Find src code for program and tests
 SRCS = $(shell find $(PATHS) -name "*.c" -not -name "main.c")
 SRCT = $(shell find $(PATHT) -name "*.c")
+SRCU = $(shell find $(PATHU) -name "*.c")
 
 # Create object names that must be made
 SRC_OBJECTS = $(patsubst $(PATHS)%.c,$(PATHOS)%.o,$(SRCS))
 TEST_OBJECTS = $(patsubst $(PATHT)%.c,$(PATHOT)%.o,$(SRCT))
+UNITY_OBJECTS = $(patsubst $(PATHU)%.c,$(PATHOU)%.o,$(SRCU))
 
 # Test Executables here i am creating a list of the executables that need to be made
 TEST_EXECUTABLES = $(patsubst $(PATHT)%.c,$(PATHB)%.$(TARGET_EXTENSION),$(SRCT))
@@ -70,20 +72,14 @@ $(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
 # But I need % without "Test" to match inside $(PATHOS)
 # I need to do a secondary expansion on $(PATHOS)%.o and substitution of Test $(subst Test,,%)
 $(TEST_EXECUTABLES): $(PATHB)%.$(TARGET_EXTENSION): $(PATHOT)%.o $(PATHOS)%.o $(PATHOU)unity.o #$(PATHD)Test%.d
-	@echo "pattern: $(PATHB)%.$(TARGET_EXTENSION)"
 	@$(MKDIR) $(dir $@)
 	$(LINK) -o $@ $^
 
 
-$(PATHOU)%.o:: $(PATHU)%.c $(PATHU)%.h
+$(UNITY_OBJECTS): $(PATHOU)%.o: $(PATHU)%.c $(PATHU)%.h
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
-$(PATHD)%.d:: $(PATHT)%.c
-	@$(MKDIR) $(dir $@)
-	$(DEPEND) $@ $<
-
-# static rules once again
 $(SRC_OBJECTS): $(PATHOS)%.o: $(PATHS)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
@@ -91,6 +87,10 @@ $(SRC_OBJECTS): $(PATHOS)%.o: $(PATHS)%.c
 $(TEST_OBJECTS): $(PATHOT)%.o: $(PATHT)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
+
+$(PATHD)%.d:: $(PATHT)%.c
+	@$(MKDIR) $(dir $@)
+	$(DEPEND) $@ $<
 
 $(PATHB):
 	$(MKDIR) $(PATHB)
