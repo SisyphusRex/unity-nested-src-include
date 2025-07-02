@@ -1,14 +1,14 @@
 ifeq ($(OS),Windows_NT)
   ifeq ($(shell uname -s),) # not in a bash-like shell
-	CLEANUP = del /F /Q
+	CLEANUP = rmdir /S /Q
 	MKDIR = mkdir
   else # in a bash-like shell, like msys
-	CLEANUP = rm -f
+	CLEANUP = rm -r
 	MKDIR = mkdir -p
   endif
 	TARGET_EXTENSION=exe
 else
-	CLEANUP = rm -f
+	CLEANUP = rm -r
 	MKDIR = mkdir -p
 	TARGET_EXTENSION=out
 endif
@@ -20,28 +20,19 @@ PATHU = unity/src/
 PATHS = src/
 PATHT = test/
 PATHB = build/
-PATHD = build/depends/
-PATHOT = build/objs/test/
-PATHOS = build/objs/src/
-PATHOU = build/objs/unity/
-PATHR = build/results/
+PATHD = $(PATHB)depends/
+PATHO = $(PATHB)objs/
+PATHOS = $(PATHO)src/
+PATHOT = $(PATHO)test/
+PATHOU = $(PATHO)unity/
+PATHR = $(PATHB)results/
+PATHE = $(PATHB)executables/
 PATHI = include/
 
-BUILD_PATHS = $(PATHB) $(PATHD) $(PATHO) $(PATHR)
 
-# Find src code for program and tests
-SRCS = $(shell find $(PATHS) -name "*.c" -not -name "main.c")
+
+# Find source code recursively
 SRCT = $(shell find $(PATHT) -name "*.c")
-SRCU = $(shell find $(PATHU) -name "*.c")
-
-# Create object names that must be made
-SRC_OBJECTS = $(patsubst $(PATHS)%.c,$(PATHOS)%.o,$(SRCS))
-TEST_OBJECTS = $(patsubst $(PATHT)%.c,$(PATHOT)%.o,$(SRCT))
-UNITY_OBJECTS = $(patsubst $(PATHU)%.c,$(PATHOU)%.o,$(SRCU))
-
-# Test Executables here i am creating a list of the executables that need to be made
-TEST_EXECUTABLES = $(patsubst $(PATHT)%.c,$(PATHB)%.$(TARGET_EXTENSION),$(SRCT))
-RESULTS = $(patsubst $(PATHB)%.$(TARGET_EXTENSION),$(PATHR)%.txt,$(TEST_EXECUTABLES))
 
 
 COMPILE=gcc -c
@@ -49,13 +40,13 @@ LINK=gcc
 DEPEND=gcc -MM -MG -MF
 CFLAGS=-I. -I$(PATHU) -I$(PATHS) -I$(PATHI) -DTEST
 
+RESULTS = $(patsubst $(PATHT)%Test.c,$(PATHR)%Test.txt,$(SRCT))
 
+PASSED = `grep -r -s PASS $(PATHR)`
+FAIL = `grep -r -s FAIL $(PATHR)`
+IGNORE = `grep -r -s IGNORE $(PATHR)`
 
-PASSED = `grep -s PASS $(PATHR)*.txt`
-FAIL = `grep -s FAIL $(PATHR)*.txt`
-IGNORE = `grep -s IGNORE $(PATHR)*.txt`
-
-test: $(BUILD_PATHS) $(RESULTS)
+test: $(RESULTS)
 	@echo "-----------------------\nIGNORES:\n-----------------------"
 	@echo "$(IGNORE)"
 	@echo "-----------------------\nFAILURES:\n-----------------------"
@@ -64,27 +55,23 @@ test: $(BUILD_PATHS) $(RESULTS)
 	@echo "$(PASSED)"
 	@echo "\nDONE"
 
-$(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
-	@echo "pattern: $(PATHB)%.$(TARGET_EXTENSION)"
+$(PATHR)%.txt: $(PATHE)%.$(TARGET_EXTENSION)
+	@$(MKDIR) $(dir $@)
 	-./$< > $@ 2>&1
 
-# TODO: The % pattern includes "Test" because i cannot filter it out and still get full path
-# But I need % without "Test" to match inside $(PATHOS)
-# I need to do a secondary expansion on $(PATHOS)%.o and substitution of Test $(subst Test,,%)
-$(TEST_EXECUTABLES): $(PATHB)%.$(TARGET_EXTENSION): $(PATHOT)%.o $(PATHOS)%.o $(PATHOU)unity.o #$(PATHD)Test%.d
+$(PATHE)%Test.$(TARGET_EXTENSION): $(PATHOT)%Test.o $(PATHOS)%.o $(PATHOU)unity.o #$(PATHD)Test%.d
 	@$(MKDIR) $(dir $@)
 	$(LINK) -o $@ $^
 
-
-$(UNITY_OBJECTS): $(PATHOU)%.o: $(PATHU)%.c $(PATHU)%.h
+$(PATHOT)%.o:: $(PATHT)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
-$(SRC_OBJECTS): $(PATHOS)%.o: $(PATHS)%.c
+$(PATHOS)%.o:: $(PATHS)%.c
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
-$(TEST_OBJECTS): $(PATHOT)%.o: $(PATHT)%.c
+$(PATHOU)%.o:: $(PATHU)%.c $(PATHU)%.h
 	@$(MKDIR) $(dir $@)
 	$(COMPILE) $(CFLAGS) $< -o $@
 
@@ -92,25 +79,13 @@ $(PATHD)%.d:: $(PATHT)%.c
 	@$(MKDIR) $(dir $@)
 	$(DEPEND) $@ $<
 
-$(PATHB):
-	$(MKDIR) $(PATHB)
-
-$(PATHD):
-	$(MKDIR) $(PATHD)
-
-$(PATHO):
-	$(MKDIR) $(PATHO)
-
-$(PATHR):
-	$(MKDIR) $(PATHR)
-
 clean:
-	$(CLEANUP) $(PATHO)*.o
-	$(CLEANUP) $(PATHB)*.$(TARGET_EXTENSION)
-	$(CLEANUP) $(PATHR)*.txt
-	rm -r $(PATHB)
+	$(CLEANUP) $(PATHB)
+	@echo "cleaned"
 
-.PRECIOUS: $(PATHB)Test%.$(TARGET_EXTENSION)
+.PRECIOUS: $(PATHE)%Test.$(TARGET_EXTENSION)
 .PRECIOUS: $(PATHD)%.d
-.PRECIOUS: $(PATHO)%.o
+.PRECIOUS: $(PATHOS)%.o
+.PRECIOUS: $(PATHOT)%.o
+.PRECIOUS: $(PATHOU)%.o
 .PRECIOUS: $(PATHR)%.txt
